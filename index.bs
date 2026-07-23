@@ -1,0 +1,319 @@
+<pre class="metadata">
+Title: Browser Workflow Tools for MCP
+Shortname: browser-workflow-tools
+Status: Draft Community Proposal
+Group: browser-to-mcp community
+Abstract: A portable workflow contract and execution model for exposing reviewed browser workflows as typed Model Context Protocol tools.
+Repository: https://github.com/gauravyad86/browser-to-mcp-research
+Markup Shorthands: https://speced.github.io/bikeshed/
+</pre>
+
+# Status of This Proposal #
+
+This document is an early, implementation-oriented proposal from the
+`browser-to-mcp` project. It is not a W3C Recommendation, an MCP
+specification, or an endorsement by the Web Machine Learning Community Group
+or the Model Context Protocol project.
+
+The proposal is published to make the design reviewable before implementation.
+Names, fields, wire behavior, and security requirements may change based on
+experiments and community feedback.
+
+The current implementation target is a local, read-only MCP server. The
+proposal intentionally separates the portable workflow contract from a
+particular browser provider, LLM, or hosting service.
+
+# 1. Introduction #
+
+Many useful business capabilities exist only behind a web user interface.
+Generic browser-control tools can operate those sites, but an agent must
+rediscover the same page structure and policy on every run. That creates
+unnecessary model calls and makes behavior difficult to review.
+
+This proposal defines a small contract for turning a reviewed browser workflow
+into a narrow MCP tool:
+
+    workflow contract -> validate -> policy check -> replay -> typed result
+
+The resulting tool is a business capability such as `search_hacker_news`, not
+a collection of unrestricted `click` and `type` primitives.
+
+## 1.1 Goals ##
+
+The proposal aims to provide:
+
+* human-reviewable and versionable workflow definitions;
+* deterministic browser replay for supported steps;
+* typed MCP inputs and structured outputs;
+* explicit domain, action, and side-effect policy;
+* assertions that determine whether a run succeeded;
+* redacted traces and provenance for every invocation;
+* a clear fallback relationship with APIs and WebMCP.
+
+## 1.2 Non-goals ##
+
+The proposal does not define:
+
+* a browser automation engine;
+* a universal recorder or autonomous workflow learner;
+* a replacement for Playwright, Browser Use, or native APIs;
+* a public registry of credentials or workflows;
+* permission to bypass CAPTCHA, access controls, or site policy;
+* autonomous execution of payments, messages, destructive actions, or uploads.
+
+# 2. Terminology #
+
+An **author** creates or reviews a workflow contract.
+
+A **workflow** is a versioned sequence of declared browser operations,
+assertions, policies, inputs, and outputs.
+
+A **runner** executes a validated workflow in a browser context.
+
+A **compiled tool** is the MCP tool metadata and handler derived from a
+workflow. The compiled tool MUST NOT contain undeclared capabilities.
+
+A **run** is one invocation of a compiled tool.
+
+**Page content** includes visible text, DOM values, tool descriptions, and
+tool outputs received from a page. Page content is untrusted data.
+
+# 3. Workflow Contract #
+
+The canonical authoring format is YAML. Implementations MUST parse it into a
+typed internal model before serving or executing it. An implementation MAY
+provide another authoring format if it produces the same canonical model.
+
+The following example is illustrative and deliberately read-only:
+
+<pre class="lang-yaml">
+name: hn_search
+version: 1
+description: Search Hacker News and return visible matching results.
+risk: read_only
+
+permissions:
+  allowed_domains:
+    - hn.algolia.com
+  downloads: false
+  uploads: false
+  submit_forms: false
+  send_messages: false
+  spend_money: false
+
+inputs:
+  query:
+    type: string
+    required: true
+    min_length: 1
+
+steps:
+  - id: search
+    action: goto
+    url: https://hn.algolia.com/?q={{query}}
+    timeout_seconds: 30
+  - id: results
+    action: extract_text
+    selector: main
+
+outputs:
+  results:
+    type: string
+
+success:
+  - id: results_present
+    assertion: output_not_empty
+    field: results
+</pre>
+
+## 3.1 Required invariants ##
+
+An implementation MUST reject a workflow that:
+
+1. has no stable name and version;
+2. has an undeclared or unsupported action;
+3. navigates outside its allowed domains;
+4. has an input that is not represented in its typed schema;
+5. has no success assertion for its declared output;
+6. requests a side effect disallowed by its permissions;
+7. changes its canonical manifest without review;
+8. attempts to use page content to change workflow policy or tool metadata.
+
+The validator SHOULD report the source path and a stable error category.
+
+## 3.2 Canonical manifest ##
+
+The runner MUST compute a canonical representation of the workflow and a
+manifest digest before execution. The digest SHOULD cover the workflow name,
+version, description, permissions, input schema, steps, output schema, and
+success assertions. Tool metadata SHOULD be derived from this same canonical
+representation so that metadata changes are diffable and reviewable.
+
+# 4. Execution Model #
+
+The normative execution order is:
+
+1. load and parse the workflow;
+2. validate the typed contract;
+3. validate caller input;
+4. check the manifest and runtime policy;
+5. create an isolated browser context;
+6. enforce domain and action permissions before each step;
+7. execute the declared steps;
+8. evaluate success assertions;
+9. assemble typed output and provenance;
+10. write a redacted trace before returning the result.
+
+An implementation MUST fail closed when validation, policy, assertion, or
+manifest checks fail. It MUST NOT silently switch to an unconstrained agent
+loop. A recovery system MAY propose a workflow patch, but a patch MUST be
+reviewed and revalidated before it is used.
+
+## 4.1 Runtime priority ##
+
+When a site offers multiple integration surfaces, an implementation SHOULD
+prefer them in this order:
+
+1. an explicitly configured first-party API;
+2. native WebMCP tools exposed by the page;
+3. deterministic browser replay;
+4. a bounded semantic recovery adapter;
+5. human review or a structured failure.
+
+WebMCP discovery and execution are separate capabilities. A runtime MUST NOT
+claim that a discovered WebMCP tool is safe to execute merely because it is
+discoverable.
+
+# 5. MCP Mapping #
+
+Each valid workflow maps to one narrow MCP tool:
+
+* `name` comes from the workflow name;
+* `description` comes from the reviewed workflow description;
+* `inputSchema` comes from the typed input definitions;
+* the result contains the declared output and provenance;
+* failures use stable structured categories rather than opaque browser errors.
+
+An implementation SHOULD load workflows dynamically at server startup and
+MUST refuse to expose invalid workflows. It SHOULD support local STDIO first;
+remote HTTP transport, OAuth, and long-running task handles are later
+deployment concerns and MUST NOT weaken the workflow policy.
+
+Example result shape:
+
+<pre class="lang-json">
+{
+  "status": "success",
+  "output": { "results": "..." },
+  "provenance": {
+    "workflow": "hn_search",
+    "version": 1,
+    "manifestDigest": "sha256:...",
+    "runId": "run_...",
+    "sourceUrls": ["https://hn.algolia.com/"],
+    "completedAt": "2026-07-22T00:00:00Z"
+  }
+}
+</pre>
+
+# 6. Security And Privacy #
+
+The workflow contract is a security boundary, not only a prompt for an agent.
+
+Implementations MUST:
+
+* use explicit origin/domain allowlists;
+* isolate browser contexts unless a caller explicitly selects a labelled
+  profile;
+* redact credentials, cookies, tokens, and configured sensitive fields from
+  traces and outputs;
+* treat page text, tool descriptions, and extracted values as untrusted;
+* prevent page content from changing permissions, schemas, or step targets;
+* require explicit review before enabling write, financial, upload, message,
+  or destructive actions;
+* record refusals and policy decisions for auditability.
+
+Implementations SHOULD expose `readOnlyHint`-style metadata where supported,
+but metadata is advisory. Enforcement MUST happen in the runner.
+
+The model must not be treated as an authorization system. Authorization is
+derived from the validated workflow, caller identity, browser profile policy,
+and runtime configuration.
+
+# 7. Reliability And Interoperability #
+
+Browser workflows are sensitive to layout changes, timing, authentication
+state, localization, and anti-automation controls. A conforming implementation
+SHOULD provide:
+
+* stable selectors and explicit waits;
+* bounded timeouts and retries;
+* assertions for every important output;
+* failure categories for selector, assertion, authentication, timeout,
+  permission, schema, browser, and recovery failures;
+* reproducible fixtures for changed layouts, delayed pages, malformed output,
+  unauthorized navigation, and hostile page text;
+* run metrics including success rate, latency, retry count, and failure class.
+
+The workflow contract SHOULD remain portable across browser providers. A
+provider-specific capability MUST be declared rather than inferred.
+
+# 8. Conformance Levels #
+
+**Level 0: Contract.** Parses typed workflows, validates policy, computes a
+manifest digest, and rejects invalid contracts.
+
+**Level 1: Replay.** Implements declared read-only steps, assertions, typed
+outputs, redacted traces, and provenance.
+
+**Level 2: MCP.** Exposes validated workflows as MCP tools and returns the
+structured result shape.
+
+**Level 3: Interoperability.** Discovers and safely adapts to native WebMCP,
+APIs, existing browser sessions, and bounded recovery without bypassing the
+contract.
+
+An implementation MUST state its conformance level and unsupported actions.
+
+# 9. Open Questions #
+
+The following are intentionally not frozen:
+
+* whether a common workflow schema should be proposed to MCP or remain
+  project-local;
+* a standard selector and locator portability model;
+* remote workflow distribution and signing;
+* OAuth and profile isolation for remote execution;
+* a common trace and evaluation format;
+* how native WebMCP execution should be authorized and represented;
+* whether long-running runs should use MCP Tasks or a project-neutral handle.
+
+# 10. Implementation Roadmap #
+
+The first implementation should ship Level 0 through Level 2 for local,
+read-only workflows. The reference workflow is Hacker News search. After
+repeatability and trace quality are measured, the project can add authenticated
+read-only workflows, existing-tab attachment, downloads, native WebMCP
+execution, repair proposals, remote transport, and hosted operations.
+
+The proposal will be revised from implementation evidence, conformance tests,
+security review, and feedback from MCP and Web platform practitioners.
+
+# Appendix A: Relationship To Existing Projects #
+
+Playwright MCP provides generic browser-control tools for an agent. Browser Use
+and similar systems provide semantic browser-agent execution. WebMCP defines a
+web-page-side API for sites to expose JavaScript or declarative tools to
+browser-integrated agents.
+
+This proposal occupies a different layer: it defines how a developer authors,
+validates, replays, governs, and exposes a reviewed browser workflow as an
+external MCP tool when a first-party API or native WebMCP tool is unavailable.
+
+# Appendix B: References #
+
+* [WebMCP] https://webmachinelearning.github.io/webmcp/
+* [WebMCP repository] https://github.com/webmachinelearning/webmcp
+* [Model Context Protocol] https://modelcontextprotocol.io/specification/latest
+* [MCP Python SDK] https://github.com/modelcontextprotocol/python-sdk
+* [Playwright MCP] https://github.com/microsoft/playwright-mcp
