@@ -5,36 +5,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Browser Workflow Tools for MCP</title>
   <style>
-    :root { color-scheme: light; --ink: #17202a; --muted: #5b6875; --line: #d7dee5; --paper: #fff; --wash: #f3f6f8; --accent: #075985; --accent-soft: #e0f2fe; }
+    :root { color-scheme: light; --ink: #1f2933; --muted: #62707c; --line: #d9e0e6; --paper: #fff; --wash: #f7f8fa; --accent: #176b87; --accent-soft: #edf6f8; }
     * { box-sizing: border-box; }
-    body { margin: 0; color: var(--ink); background: var(--wash); font: 16px/1.65 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-    header { background: #102a43; color: white; padding: 64px max(24px, calc((100vw - 1180px) / 2)); }
-    header p { max-width: 760px; color: #d9e7f3; }
-    .eyebrow { color: #8ed0f5; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    body { margin: 0; color: var(--ink); background: var(--paper); font: 16px/1.65 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    header { border-bottom: 1px solid var(--line); background: var(--wash); }
+    .masthead { max-width: 1040px; margin: 0 auto; padding: 30px 24px 28px; }
+    header p { max-width: 720px; margin: 0; color: var(--muted); }
+    .eyebrow { margin-bottom: 10px; color: var(--accent); font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
     h1, h2, h3 { line-height: 1.2; }
-    h1 { max-width: 850px; margin: 8px 0 18px; font-size: clamp(2.2rem, 5vw, 4.2rem); }
-    h2 { margin-top: 2.4rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+    h1 { max-width: 800px; margin: 0 0 10px; font-size: 38px; font-weight: 700; letter-spacing: 0; }
+    h2 { margin: 44px 0 16px; padding-top: 28px; border-top: 1px solid var(--line); font-size: 24px; }
     h3 { margin-top: 1.8rem; }
     a { color: var(--accent); }
-    header a { color: #c7edff; }
-    .layout { display: grid; grid-template-columns: 250px minmax(0, 780px); gap: 56px; max-width: 1180px; margin: 0 auto; padding: 40px 24px 80px; }
-    nav { position: sticky; top: 24px; align-self: start; font-size: 14px; }
-    nav strong { display: block; margin-bottom: 10px; }
-    nav a { display: block; padding: 4px 0; text-decoration: none; }
-    main { min-width: 0; background: var(--paper); padding: 34px 46px 58px; border: 1px solid var(--line); box-shadow: 0 8px 30px #102a4310; }
-    .notice { margin: 0 0 28px; padding: 16px 18px; border-left: 4px solid #0284c7; background: var(--accent-soft); }
-    pre { overflow-x: auto; padding: 18px; border-radius: 6px; background: #102a43; color: #eff8ff; font: 13px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .links { margin-top: 14px; font-size: 14px; }
+    .layout { display: grid; grid-template-columns: 190px minmax(0, 760px); gap: 48px; max-width: 1040px; margin: 0 auto; padding: 32px 24px 72px; }
+    nav { position: sticky; top: 24px; align-self: start; padding-top: 4px; font-size: 13px; }
+    nav strong { display: block; margin-bottom: 8px; color: var(--ink); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+    nav a { display: block; padding: 3px 0; color: var(--muted); text-decoration: none; }
+    nav a:hover { color: var(--accent); text-decoration: underline; }
+    main { min-width: 0; padding-bottom: 24px; }
+    main > :first-child { margin-top: 0; }
+    .notice { margin: 0 0 30px; padding: 12px 14px; border-left: 3px solid var(--accent); background: var(--accent-soft); color: #314754; font-size: 15px; }
+    pre { overflow-x: auto; padding: 16px; border: 1px solid var(--line); border-radius: 3px; background: #f4f6f8; color: #24313d; font: 13px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; }
     li { margin: 5px 0; }
-    footer { max-width: 1180px; margin: 0 auto; padding: 0 24px 48px; color: var(--muted); font-size: 14px; }
-    @media (max-width: 760px) { header { padding: 42px 24px; } .layout { display: block; padding-top: 24px; } nav { position: static; margin-bottom: 28px; padding-bottom: 18px; border-bottom: 1px solid var(--line); } main { padding: 24px 20px 40px; } }
+    footer { max-width: 1040px; margin: 0 auto; padding: 0 24px 44px; color: var(--muted); font-size: 13px; }
+    @media (max-width: 760px) { .masthead { padding: 24px 20px; } h1 { font-size: 30px; } .layout { display: block; padding: 24px 20px 56px; } nav { position: static; margin: 0 0 28px; padding: 0 0 18px; border-bottom: 1px solid var(--line); } nav a { display: inline; margin-right: 12px; line-height: 2; } main { padding: 0; } }
   </style>
 </head>
 <body>
   <header>
-    <div class="eyebrow">Draft Community Proposal · 22 July 2026</div>
-    <h1>Browser Workflow Tools for MCP</h1>
-    <p>A portable workflow contract and execution model for exposing reviewed browser workflows as typed Model Context Protocol tools.</p>
-    <p><a href="index.bs">Normative source</a> · <a href="https://github.com/browser-to-mcp/research/blob/main/PRODUCT_SPEC.md">Product specification</a> · <a href="https://github.com/browser-to-mcp/research/blob/main/BUILD_PLAN.md">Build plan</a></p>
+    <div class="masthead">
+      <div class="eyebrow">Browser to MCP · Draft proposal · 22 July 2026</div>
+      <h1>Browser Workflow Tools for MCP</h1>
+      <p>A workflow contract and execution model for exposing reviewed browser workflows as typed Model Context Protocol tools.</p>
+      <p class="links"><a href="index.bs">Normative source</a> · <a href="https://github.com/browser-to-mcp/research/blob/main/PRODUCT_SPEC.md">Product specification</a> · <a href="https://github.com/browser-to-mcp/research/blob/main/BUILD_PLAN.md">Build plan</a></p>
+    </div>
   </header>
   <div class="layout">
     <nav aria-label="Table of contents">
@@ -93,6 +98,6 @@ success:
       <ul><li><a href="https://webmachinelearning.github.io/webmcp/">WebMCP draft specification</a></li><li><a href="https://github.com/webmachinelearning/webmcp">WebMCP repository</a></li><li><a href="https://modelcontextprotocol.io/specification/latest">Model Context Protocol specification</a></li><li><a href="https://github.com/modelcontextprotocol/python-sdk">MCP Python SDK</a></li><li><a href="https://github.com/microsoft/playwright-mcp">Playwright MCP</a></li></ul>
     </main>
   </div>
-  <footer>Source and proposal history: <a href="https://github.com/gauravyad86/browser-to-mcp-research">browser-to-mcp-research</a>.</footer>
+  <footer>Source and proposal history: <a href="https://github.com/browser-to-mcp/research">browser-to-mcp/research</a>.</footer>
 </body>
 </html>
