@@ -17,6 +17,19 @@ This repository contains the proposal for that idea. It is written to be
 clear enough to implement, test, and challenge.
 
 - [Read the live proposal](https://browser-to-mcp.github.io/spec/)
+- [`index.bs`](index.bs) is the Bikeshed source.
+- [`index.html`](index.html) is the dependency-free publication preview.
+- [Research repository](https://github.com/browser-to-mcp/research)
+
+## Where to start
+
+Read the [proposal](https://browser-to-mcp.github.io/spec/) first. For the
+decisions behind it, see the [product specification](https://github.com/browser-to-mcp/research/blob/main/PRODUCT_SPEC.md)
+and [build plan](https://github.com/browser-to-mcp/research/blob/main/BUILD_PLAN.md).
+
+Feedback, implementation results, and small documentation improvements are
+welcome. Please open an issue in the [research repository](https://github.com/browser-to-mcp/research/issues)
+with a concrete example or proposed change.
 
 This is an early community proposal, not an official W3C or MCP standard.
 
