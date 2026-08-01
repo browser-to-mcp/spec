@@ -6,36 +6,183 @@
   <meta name="description" content="A draft contract and execution model for turning reviewed browser workflows into typed MCP tools.">
   <title>Browser Workflow Tools for MCP</title>
   <style>
-    * { font-family: monospace; }
-    body { margin: 10px; color: #111; background: #fff; font-size: 16px; line-height: 1.35; }
-    main, footer { max-width: 48em; }
-    nav { margin-bottom: 8px; }
-    h1 { margin: 1.2em 0 .5em; font-size: 1.55em; }
-    h2 { margin: 1.5em 0 .5em; font-size: 1.2em; }
-    h3 { margin: 1.25em 0 .4em; font-size: 1em; }
-    p { margin: .65em 0; }
-    pre { margin-left: 2em; overflow-x: auto; white-space: pre; }
-    code { font-family: inherit; }
-    li { margin: .25em 0; }
-    table { border-collapse: collapse; margin: .8em 0; }
-    th, td { padding: .3em .8em .3em 0; text-align: left; vertical-align: top; }
-    th { border-bottom: 1px solid #999; }
-    footer { margin-top: 2em; padding: 1em 0 2em; border-top: 1px solid #aaa; }
+    :root {
+      color-scheme: light;
+      --ink: #1d1d1f;
+      --muted: #67676b;
+      --line: #d4d4d6;
+      --soft-line: #e7e7e9;
+      --code-bg: #f7f7f8;
+      --link: #4f218c;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 1.5rem;
+    }
+
+    body {
+      margin: 0;
+      padding: 10px 12px 0;
+      color: var(--ink);
+      background: #fff;
+      font: 14px/1.48 ui-monospace, SFMono-Regular, Menlo, Monaco,
+        Consolas, "Liberation Mono", "Courier New", monospace;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    main,
+    footer { max-width: 82ch; }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0 .7em;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
+    nav a + a,
+    footer a + a {
+      padding-left: .7em;
+      border-left: 1px solid #999;
+    }
+
+    hr {
+      height: 0;
+      margin: 0;
+      border: 0;
+      border-top: 1px solid var(--line);
+    }
+
+    a {
+      color: var(--link);
+      text-decoration-thickness: 1px;
+      text-underline-offset: 2px;
+    }
+
+    a:hover { text-decoration-thickness: 2px; }
+
+    a:focus-visible {
+      outline: 2px solid var(--link);
+      outline-offset: 2px;
+      border-radius: 1px;
+    }
+
+    h1,
+    h2,
+    h3 {
+      line-height: 1.25;
+      text-wrap: balance;
+    }
+
+    h1 {
+      margin: 1.2em 0 .45em;
+      font-size: 1.62em;
+      letter-spacing: -.025em;
+    }
+
+    h2 {
+      margin: 1.75em 0 .55em;
+      padding-bottom: .22em;
+      border-bottom: 1px solid var(--soft-line);
+      font-size: 1.18em;
+      letter-spacing: -.012em;
+    }
+
+    h3 { margin: 1.45em 0 .45em; font-size: 1em; }
+    p { margin: .7em 0; }
+    ul, ol { padding-left: 2em; }
+    li { margin: .28em 0; }
+
+    code,
+    pre { font-family: inherit; }
+
+    :not(pre) > code {
+      padding: .08em .3em;
+      border: 1px solid var(--soft-line);
+      border-radius: 3px;
+      background: var(--code-bg);
+      font-size: .92em;
+      overflow-wrap: anywhere;
+    }
+
+    pre {
+      max-width: 100%;
+      margin: 1em 0 1.2em;
+      padding: .85em 1em;
+      overflow-x: auto;
+      border: 1px solid var(--soft-line);
+      border-radius: 3px;
+      background: var(--code-bg);
+      font-size: .88em;
+      line-height: 1.5;
+      tab-size: 2;
+      white-space: pre;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+      display: block;
+      width: max-content;
+      max-width: 100%;
+      margin: 1em 0;
+      overflow-x: auto;
+      border-collapse: collapse;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    th,
+    td {
+      min-width: 10em;
+      padding: .55em 1.1em .55em 0;
+      border-bottom: 1px solid var(--soft-line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th { border-bottom-color: #aaa; }
+
+    footer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .35em .7em;
+      margin-top: 2.5em;
+      padding: 1em 0 2.5em;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    ::selection { background: #e9ddf7; }
+
     @media (max-width: 600px) {
-      body { font-size: 15px; }
-      pre { margin-left: 0; }
-      nav a { line-height: 1.8; }
+      body { padding-inline: 10px; font-size: 13.5px; }
+      nav { font-size: 12px; }
+      nav a + a, footer a + a { padding-left: 0; border-left: 0; }
+      h1 { font-size: 1.5em; }
+      pre { margin-inline: -2px; padding: .75em; font-size: .84em; }
+      th, td { min-width: 9em; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
     }
   </style>
 </head>
 <body>
   <nav aria-label="Primary navigation">
-    <a href="#overview">Overview</a> |
-    <a href="#contract">Contract</a> |
-    <a href="#execution">Execution</a> |
-    <a href="#security">Security</a> |
-    <a href="#evaluation">Evaluation</a> |
-    <a href="#status">Status</a> |
+    <a href="#overview">Overview</a>
+    <a href="#contract">Contract</a>
+    <a href="#execution">Execution</a>
+    <a href="#security">Security</a>
+    <a href="#evaluation">Evaluation</a>
+    <a href="#status">Status</a>
     <a href="https://github.com/browser-to-mcp/spec">Source</a>
   </nav>
   <hr>
@@ -359,8 +506,8 @@ success:
   </main>
 
   <footer>
-    <a href="index.bs">Detailed proposal source</a> |
-    <a href="https://github.com/browser-to-mcp/spec">Repository</a> |
+    <a href="index.bs">Detailed proposal source</a>
+    <a href="https://github.com/browser-to-mcp/spec">Repository</a>
     <a href="https://github.com/browser-to-mcp/spec/issues">Issues</a>
   </footer>
 </body>
