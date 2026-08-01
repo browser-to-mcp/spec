@@ -25,7 +25,7 @@
 
     body {
       margin: 0;
-      padding: 10px 12px 0;
+      padding: 10px 24px 0;
       color: var(--ink);
       background: #fff;
       font: 14px/1.48 ui-monospace, SFMono-Regular, Menlo, Monaco,
@@ -35,7 +35,16 @@
     }
 
     main,
-    footer { max-width: 82ch; }
+    footer {
+      width: min(100%, 94ch);
+      margin-inline: auto;
+    }
+
+    body > nav,
+    body > hr {
+      width: min(100%, 112ch);
+      margin-inline: auto;
+    }
 
     nav {
       display: flex;
