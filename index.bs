@@ -4,7 +4,7 @@ Shortname: browser-workflow-tools
 Status: Draft Community Proposal
 Group: browser-to-mcp community
 Abstract: A portable workflow contract and execution model for exposing reviewed browser workflows as typed Model Context Protocol tools.
-Repository: https://github.com/gauravyad86/browser-to-mcp-research
+Repository: https://github.com/browser-to-mcp/spec
 Markup Shorthands: https://speced.github.io/bikeshed/
 </pre>
 
@@ -15,20 +15,26 @@ This document is an early, implementation-oriented proposal from the
 specification, or an endorsement by the Web Machine Learning Community Group
 or the Model Context Protocol project.
 
-The proposal is published to make the design reviewable before implementation.
-Names, fields, wire behavior, and security requirements may change based on
-experiments and community feedback.
+The proposal is published to keep the design reviewable as implementation and
+evaluation proceed. A reference implementation now supports the local,
+read-only contract, replay, trace, and MCP path described through Level 2.
+Names, fields, wire behavior, and security requirements may still change based
+on experiments and community feedback.
 
-The current implementation target is a local, read-only MCP server. The
-proposal intentionally separates the portable workflow contract from a
-particular browser provider, LLM, or hosting service.
+The implemented scope is a local, read-only MCP server plus read-only discovery
+of native WebMCP metadata. Native WebMCP execution, authenticated workflows,
+writes, hosted browsers, and remote transport remain future work. The proposal
+intentionally separates the portable workflow contract from a particular
+browser provider, model, or hosting service.
 
 # 1. Introduction #
 
 Many useful business capabilities exist only behind a web user interface.
-Generic browser-control tools can operate those sites, but an agent must
-rediscover the same page structure and policy on every run. That creates
-unnecessary model calls and makes behavior difficult to review.
+Generic browser-control tools can operate those sites, but repeated runs may
+need to plan against the page and select low-level actions again. That can add
+model work and makes the allowed behavior harder to review in advance. Whether
+a compiled workflow improves reliability, cost, or safety is a hypothesis that
+must be measured rather than assumed.
 
 This proposal defines a small contract for turning a reviewed browser workflow
 into a narrow MCP tool:
@@ -48,7 +54,8 @@ The proposal aims to provide:
 * explicit domain, action, and side-effect policy;
 * assertions that determine whether a run succeeded;
 * redacted traces and provenance for every invocation;
-* a clear fallback relationship with APIs and WebMCP.
+* a clear fallback relationship with APIs and WebMCP;
+* evaluation rules that separate runtime overhead from product value.
 
 ## 1.2 Non-goals ##
 
@@ -92,6 +99,9 @@ version: 1
 description: Search Hacker News and return visible matching results.
 risk: read_only
 
+manifest:
+  version: 1
+
 permissions:
   allowed_domains:
     - hn.algolia.com
@@ -100,6 +110,7 @@ permissions:
   submit_forms: false
   send_messages: false
   spend_money: false
+  requires_authentication: false
 
 inputs:
   query:
@@ -112,9 +123,18 @@ steps:
     action: goto
     url: https://hn.algolia.com/?q={{query}}
     timeout_seconds: 30
+    risk: read_only
+    idempotency: safe
+    retry: none
+    confirmation: never
   - id: results
     action: extract_text
     selector: main
+    timeout_seconds: 30
+    risk: read_only
+    idempotency: safe
+    retry: none
+    confirmation: never
 
 outputs:
   results:
@@ -138,6 +158,9 @@ An implementation MUST reject a workflow that:
 6. requests a side effect disallowed by its permissions;
 7. changes its canonical manifest without review;
 8. attempts to use page content to change workflow policy or tool metadata.
+
+Step and assertion identifiers MUST be unique within a workflow. A required
+safety field MUST NOT be inferred from a default that is invisible to review.
 
 The validator SHOULD report the source path and a stable error category.
 
@@ -165,14 +188,14 @@ The normative execution order is:
 10. write a redacted trace before returning the result.
 
 An implementation MUST fail closed when validation, policy, assertion, or
-manifest checks fail. It MUST NOT silently switch to an unconstrained agent
+manifest checks fail. It MUST NOT silently switch to an unconstrained planning
 loop. A recovery system MAY propose a workflow patch, but a patch MUST be
 reviewed and revalidated before it is used.
 
-## 4.1 Runtime priority ##
+## 4.1 Future interoperability priority ##
 
-When a site offers multiple integration surfaces, an implementation SHOULD
-prefer them in this order:
+When the corresponding adapters are implemented and explicitly configured, a
+runtime SHOULD prefer integration surfaces in this order:
 
 1. an explicitly configured first-party API;
 2. native WebMCP tools exposed by the page;
@@ -203,22 +226,17 @@ Example result shape:
 
 <pre class="lang-json">
 {
-  "status": "success",
-  "output": { "results": "..." },
-  "provenance": {
-    "workflow": "hn_search",
-    "version": 1,
-    "manifestDigest": "sha256:...",
-    "runId": "run_...",
-    "sourceUrls": ["https://hn.algolia.com/"],
-    "completedAt": "2026-07-22T00:00:00Z"
-  }
+  "workflow": "hn_search",
+  "manifest_digest": "sha256:...",
+  "outputs": { "results": "..." },
+  "trace_path": "traces/run_....json",
+  "duration_seconds": 1.24
 }
 </pre>
 
 # 6. Security And Privacy #
 
-The workflow contract is a security boundary, not only a prompt for an agent.
+The workflow contract is a security boundary, not only a prompt for a model.
 
 Implementations MUST:
 
@@ -258,7 +276,48 @@ SHOULD provide:
 The workflow contract SHOULD remain portable across browser providers. A
 provider-specific capability MUST be declared rather than inferred.
 
-# 8. Conformance Levels #
+# 8. Evaluation And Claims #
+
+Evaluations MUST identify the question each comparison answers. Results from
+different suites MUST NOT be collapsed into a single score.
+
+## 8.1 Runtime parity and overhead ##
+
+The direct Playwright, workflow replay, and generated MCP paths share the same
+browser engine. Comparing them measures task feasibility, layer correctness,
+and workflow or protocol overhead. It does not compare independent products
+and MUST NOT be presented as evidence that this project is faster or more
+reliable than Playwright or Playwright MCP.
+
+## 8.2 Product value ##
+
+A product comparison SHOULD give the same frozen model and harness the same
+goal, task state, validator, budgets, browser, and network condition, while
+varying only the available tool surface:
+
+* generic Playwright MCP browser tools; or
+* the generated narrow workflow tool.
+
+The comparison SHOULD report Completion Under Policy, model turns, tokens,
+tool calls, browser actions, duration, monetary cost, invalid calls, policy
+violations, result-schema validity, provenance completeness, and diagnosis
+quality. Workflow preparation, review, and maintenance cost MUST be reported
+alongside recurring execution cost.
+
+## 8.3 Safety and resilience ##
+
+Safety evaluation SHOULD distinguish correct refusal, incorrect refusal,
+policy violation, and compliant completion. Resilience evaluation SHOULD use
+controlled fixtures for layout changes, delay, network faults, malformed
+content, hostile instructions, digest drift, and MCP failures. Live-web runs
+MAY supplement these fixtures but MUST be labelled as time-dependent
+observations rather than reproducible ground truth.
+
+Claims MUST name the task set, run count, environment, date range, model when
+used, and denominator. A small task set MUST NOT be generalized to arbitrary
+websites.
+
+# 9. Conformance Levels #
 
 **Level 0: Contract.** Parses typed workflows, validates policy, computes a
 manifest digest, and rejects invalid contracts.
@@ -274,8 +333,10 @@ APIs, existing browser sessions, and bounded recovery without bypassing the
 contract.
 
 An implementation MUST state its conformance level and unsupported actions.
+The current reference implementation targets Level 2. Its read-only native
+WebMCP discovery command is not, by itself, a Level 3 conformance claim.
 
-# 9. Open Questions #
+# 10. Open Questions #
 
 The following are intentionally not frozen:
 
@@ -287,24 +348,33 @@ The following are intentionally not frozen:
 * a common trace and evaluation format;
 * how native WebMCP execution should be authorized and represented;
 * whether long-running runs should use MCP Tasks or a project-neutral handle.
+* how preparation and maintenance cost should be represented in a portable
+  evaluation record.
 
-# 10. Implementation Roadmap #
+# 11. Implementation Roadmap #
 
-The first implementation should ship Level 0 through Level 2 for local,
-read-only workflows. The reference workflow is Hacker News search. After
-repeatability and trace quality are measured, the project can add authenticated
-read-only workflows, existing-tab attachment, downloads, native WebMCP
-execution, repair proposals, remote transport, and hosted operations.
+The reference implementation covers Level 0 through Level 2 for local,
+read-only workflows and includes deterministic readiness fixtures. Hacker News
+and Wikipedia search are current example workflows. Read-only native WebMCP
+metadata discovery exists as a separate interoperability experiment; discovered
+tools are not imported or invoked.
+
+The next evidence milestone is a paired product-value evaluation: the same
+frozen model uses generic Playwright MCP tools or a generated workflow tool on
+the same controlled task. Safety and operational-resilience suites remain
+separate. Authenticated workflows, existing-tab attachment, native WebMCP
+execution, repair proposals, remote transport, and hosted operations require
+additional authorization and safety work.
 
 The proposal will be revised from implementation evidence, conformance tests,
 security review, and feedback from MCP and Web platform practitioners.
 
 # Appendix A: Relationship To Existing Projects #
 
-Playwright MCP provides generic browser-control tools for an agent. Browser Use
-and similar systems provide semantic browser-agent execution. WebMCP defines a
-web-page-side API for sites to expose JavaScript or declarative tools to
-browser-integrated agents.
+Playwright MCP provides generic browser-control tools. Browser Use and similar
+systems provide semantic browser execution. WebMCP defines a web-page-side API
+for sites to expose JavaScript or declarative tools to browser-integrated
+runtimes.
 
 This proposal occupies a different layer: it defines how a developer authors,
 validates, replays, governs, and exposes a reviewed browser workflow as an
@@ -317,3 +387,7 @@ external MCP tool when a first-party API or native WebMCP tool is unavailable.
 * [Model Context Protocol] https://modelcontextprotocol.io/specification/latest
 * [MCP Python SDK] https://github.com/modelcontextprotocol/python-sdk
 * [Playwright MCP] https://github.com/microsoft/playwright-mcp
+* [BrowserGym] https://arxiv.org/abs/2412.05467
+* [WebArena] https://arxiv.org/abs/2307.13854
+* [ST-WebAgentBench] https://research.ibm.com/publications/st-webagentbench-a-benchmark-for-evaluating-safety-and-trustworthiness-in-web-agents
+* [WABER] https://www.microsoft.com/en-us/research/publication/waber-evaluating-reliability-and-efficiency-of-web-agents-with-existing-benchmarks/

@@ -3,101 +3,365 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A draft contract and execution model for turning reviewed browser workflows into typed MCP tools.">
   <title>Browser Workflow Tools for MCP</title>
   <style>
-    :root { color-scheme: light; --ink: #1f2933; --muted: #62707c; --line: #d9e0e6; --paper: #fff; --wash: #f7f8fa; --accent: #176b87; --accent-soft: #edf6f8; }
-    * { box-sizing: border-box; }
-    body { margin: 0; color: var(--ink); background: var(--paper); font: 16px/1.65 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-    header { border-bottom: 1px solid var(--line); background: var(--wash); }
-    .masthead { max-width: 1040px; margin: 0 auto; padding: 30px 24px 28px; }
-    header p { max-width: 720px; margin: 0; color: var(--muted); }
-    .eyebrow { margin-bottom: 10px; color: var(--accent); font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
-    h1, h2, h3 { line-height: 1.2; }
-    h1 { max-width: 800px; margin: 0 0 10px; font-size: 38px; font-weight: 700; letter-spacing: 0; }
-    h2 { margin: 44px 0 16px; padding-top: 28px; border-top: 1px solid var(--line); font-size: 24px; }
-    h3 { margin-top: 1.8rem; }
-    a { color: var(--accent); }
-    .links { margin-top: 14px; font-size: 14px; }
-    .layout { display: grid; grid-template-columns: 190px minmax(0, 760px); gap: 48px; max-width: 1040px; margin: 0 auto; padding: 32px 24px 72px; }
-    nav { position: sticky; top: 24px; align-self: start; padding-top: 4px; font-size: 13px; }
-    nav strong { display: block; margin-bottom: 8px; color: var(--ink); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
-    nav a { display: block; padding: 3px 0; color: var(--muted); text-decoration: none; }
-    nav a:hover { color: var(--accent); text-decoration: underline; }
-    main { min-width: 0; padding-bottom: 24px; }
-    main > :first-child { margin-top: 0; }
-    .notice { margin: 0 0 30px; padding: 12px 14px; border-left: 3px solid var(--accent); background: var(--accent-soft); color: #314754; font-size: 15px; }
-    pre { overflow-x: auto; padding: 16px; border: 1px solid var(--line); border-radius: 3px; background: #f4f6f8; color: #24313d; font: 13px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; }
-    li { margin: 5px 0; }
-    footer { max-width: 1040px; margin: 0 auto; padding: 0 24px 44px; color: var(--muted); font-size: 13px; }
-    @media (max-width: 760px) { .masthead { padding: 24px 20px; } h1 { font-size: 30px; } .layout { display: block; padding: 24px 20px 56px; } nav { position: static; margin: 0 0 28px; padding: 0 0 18px; border-bottom: 1px solid var(--line); } nav a { display: inline; margin-right: 12px; line-height: 2; } main { padding: 0; } }
+    * { font-family: monospace; }
+    body { margin: 10px; color: #111; background: #fff; font-size: 16px; line-height: 1.35; }
+    main, footer { max-width: 48em; }
+    nav { margin-bottom: 8px; }
+    h1 { margin: 1.2em 0 .5em; font-size: 1.55em; }
+    h2 { margin: 1.5em 0 .5em; font-size: 1.2em; }
+    h3 { margin: 1.25em 0 .4em; font-size: 1em; }
+    p { margin: .65em 0; }
+    pre { margin-left: 2em; overflow-x: auto; white-space: pre; }
+    code { font-family: inherit; }
+    li { margin: .25em 0; }
+    table { border-collapse: collapse; margin: .8em 0; }
+    th, td { padding: .3em .8em .3em 0; text-align: left; vertical-align: top; }
+    th { border-bottom: 1px solid #999; }
+    footer { margin-top: 2em; padding: 1em 0 2em; border-top: 1px solid #aaa; }
+    @media (max-width: 600px) {
+      body { font-size: 15px; }
+      pre { margin-left: 0; }
+      nav a { line-height: 1.8; }
+    }
   </style>
 </head>
 <body>
-  <header>
-    <div class="masthead">
-      <div class="eyebrow">Browser to MCP · Draft proposal · 22 July 2026</div>
-      <h1>Browser Workflow Tools for MCP</h1>
-      <p>A workflow contract and execution model for exposing reviewed browser workflows as typed Model Context Protocol tools.</p>
-      <p class="links"><a href="index.bs">Normative source</a> · <a href="https://github.com/browser-to-mcp/research/blob/main/PRODUCT_SPEC.md">Product specification</a> · <a href="https://github.com/browser-to-mcp/research/blob/main/BUILD_PLAN.md">Build plan</a></p>
-    </div>
-  </header>
-  <div class="layout">
-    <nav aria-label="Table of contents">
-      <strong>Contents</strong>
-      <a href="#status">Status</a><a href="#introduction">1. Introduction</a><a href="#contract">2. Workflow contract</a>
-      <a href="#execution">3. Execution model</a><a href="#mcp">4. MCP mapping</a><a href="#security">5. Security</a>
-      <a href="#reliability">6. Reliability</a><a href="#conformance">7. Conformance</a><a href="#questions">8. Open questions</a>
-    </nav>
-    <main>
-      <p id="status" class="notice"><strong>What you are reading:</strong> This draft describes how a reviewed browser workflow can become one reusable, typed MCP tool. It is an early implementation-oriented proposal from the <code>browser-to-mcp</code> project, not a W3C Recommendation or MCP specification.</p>
-      <h2 id="introduction">1. Introduction</h2>
-      <p>Many useful business capabilities exist only behind a web user interface. Generic browser-control tools can operate those sites, but an agent must rediscover the same page structure on every run. This proposal turns a reviewed workflow into a narrow business tool.</p>
-      <pre>workflow contract -&gt; validate -&gt; policy check -&gt; replay -&gt; typed result</pre>
-      <h2 id="contract">2. Workflow contract</h2>
-      <p>The canonical authoring format is YAML. Implementations parse it into typed models before serving or executing it. A workflow declares its inputs, browser steps, allowed domains, outputs, and success assertions.</p>
-      <pre>name: hn_search
+  <nav aria-label="Primary navigation">
+    <a href="#overview">Overview</a> |
+    <a href="#contract">Contract</a> |
+    <a href="#execution">Execution</a> |
+    <a href="#security">Security</a> |
+    <a href="#evaluation">Evaluation</a> |
+    <a href="#status">Status</a> |
+    <a href="https://github.com/browser-to-mcp/spec">Source</a>
+  </nav>
+  <hr>
+
+  <main>
+    <h1>Browser Workflow Tools for MCP</h1>
+
+    <p>
+      A draft contract and execution model for exposing a reviewed browser
+      workflow as one narrow, typed Model Context Protocol tool.
+    </p>
+
+    <pre>workflow contract -&gt; validation -&gt; policy check -&gt; replay -&gt; typed result</pre>
+
+    <p>
+      This is an early implementation-oriented proposal from the
+      <code>browser-to-mcp</code> project. It is not a W3C Recommendation, an
+      MCP specification, or an endorsement by either project.
+    </p>
+
+    <h2 id="overview">1. Overview</h2>
+
+    <p>
+      Useful work often exists only behind a web interface. General browser
+      controls can operate those interfaces, but recurring runs may need to
+      plan against the page and select low-level actions again. A reviewed
+      workflow makes the intended inputs, steps, permissions, outputs, and
+      success conditions explicit before execution.
+    </p>
+
+    <p>
+      The result is a capability such as <code>hn_search(query)</code>, rather
+      than an unrestricted collection of click, type, and navigation controls.
+      Improved reliability, cost, or safety is a testable hypothesis, not an
+      assumption of this proposal.
+    </p>
+
+    <h3>Goals</h3>
+    <ul>
+      <li>Human-reviewable, versioned workflow definitions.</li>
+      <li>Typed MCP inputs and structured outputs.</li>
+      <li>Explicit domain, action, and side-effect policy.</li>
+      <li>Deterministic replay with success assertions.</li>
+      <li>Redacted traces and provenance for each invocation.</li>
+      <li>A clear relationship with first-party APIs and native WebMCP.</li>
+      <li>Evaluation rules that separate overhead from product value.</li>
+    </ul>
+
+    <h3>Non-goals</h3>
+    <ul>
+      <li>A new browser automation engine.</li>
+      <li>Unrestricted remote browser control.</li>
+      <li>Bypassing CAPTCHA, access controls, or site policy.</li>
+      <li>Automatic payments, messages, uploads, or destructive actions.</li>
+      <li>A public credential or workflow registry.</li>
+    </ul>
+
+    <h2 id="contract">2. Workflow contract</h2>
+
+    <p>
+      The canonical authoring format is YAML. A workflow declares its identity,
+      manifest, permissions, inputs, ordered steps, outputs, and success
+      assertions. Implementations parse it into a strict typed model before a
+      browser starts or an MCP tool is exposed.
+    </p>
+
+    <pre>name: hn_search
+description: Search Hacker News and return visible matching results.
 version: 1
 risk: read_only
+
+manifest:
+  version: 1
+
 permissions:
-  allowed_domains: [hn.algolia.com]
+  allowed_domains:
+    - hn.algolia.com
+  downloads: false
+  uploads: false
   submit_forms: false
+  send_messages: false
+  spend_money: false
+  requires_authentication: false
+
 inputs:
-  query: { type: string, required: true }
+  query:
+    type: string
+    required: true
+    min_length: 1
+
 steps:
-  - { id: search, action: goto, url: "https://hn.algolia.com/?q={{query}}" }
+  - id: search
+    action: goto
+    url: https://hn.algolia.com/?q={{query}}
+    timeout_seconds: 30
+    risk: read_only
+    idempotency: safe
+    retry: none
+    confirmation: never
+  - id: results
+    action: extract_text
+    selector: main
+    timeout_seconds: 30
+    risk: read_only
+    idempotency: safe
+    retry: none
+    confirmation: never
+
 outputs:
-  results: { type: string }
+  results:
+    type: string
+
 success:
-  - { id: results_present, assertion: output_not_empty, field: results }</pre>
-      <p>A validator rejects undeclared actions, unauthorized domains, missing output assertions, changed manifests, and attempts to let page content change policy or tool metadata.</p>
-      <h2 id="execution">3. Execution model</h2>
-      <ol><li>Parse and validate the workflow.</li><li>Validate caller input and manifest digest.</li><li>Apply runtime policy.</li><li>Run declared steps in an isolated browser context.</li><li>Evaluate assertions.</li><li>Return typed output and provenance after writing a redacted trace.</li></ol>
-      <p>The runner fails closed. Recovery may propose a patch, but it cannot silently modify or execute a workflow.</p>
-      <h2 id="mcp">4. MCP mapping</h2>
-      <p>Each valid workflow becomes one typed MCP tool. Its name, description, input schema, output schema, and permissions come from the reviewed contract. Invalid workflows are never exposed.</p>
-      <pre>{
-  "status": "success",
-  "output": { "results": "..." },
-  "provenance": {
-    "workflow": "hn_search", "version": 1,
-    "manifestDigest": "sha256:...", "runId": "run_..."
-  }
+  - id: results_present
+    assertion: output_not_empty
+    field: results</pre>
+
+    <p>
+      The example is illustrative. A live workflow must declare every required
+      origin and is rejected if it requests an unsupported action, leaves its
+      allowlist, omits a required safety field, enables a disallowed side
+      effect, references an undeclared output, or contains duplicate step or
+      assertion identifiers.
+    </p>
+
+    <h3>Canonical manifest</h3>
+    <p>
+      The name, version, description, permissions, schemas, steps, and
+      assertions form a canonical manifest. Its digest identifies the reviewed
+      behavior and makes metadata changes visible.
+    </p>
+
+    <h2 id="execution">3. Execution model</h2>
+
+    <ol>
+      <li>Load and parse the workflow.</li>
+      <li>Validate the typed contract and caller input.</li>
+      <li>Check the manifest and runtime policy.</li>
+      <li>Create an isolated browser context.</li>
+      <li>Enforce domain and action policy before each step.</li>
+      <li>Execute only the declared steps.</li>
+      <li>Evaluate success assertions.</li>
+      <li>Write a redacted trace.</li>
+      <li>Return the typed result or a structured failure.</li>
+    </ol>
+
+    <p>
+      Validation, permission, assertion, and runtime failures stop the run. A
+      recovery mechanism may propose a patch, but it cannot silently change and
+      execute the reviewed workflow.
+    </p>
+
+    <h3>Integration priority</h3>
+    <p>When corresponding adapters exist and are explicitly configured:</p>
+    <ol>
+      <li>First-party API.</li>
+      <li>Native WebMCP tool.</li>
+      <li>Deterministic browser replay.</li>
+      <li>Bounded semantic recovery.</li>
+      <li>Human review or a structured failure.</li>
+    </ol>
+
+    <p>
+      Discovery does not imply authorization. A page-provided tool is not safe
+      merely because it is discoverable.
+    </p>
+
+    <h2 id="mcp">4. MCP mapping</h2>
+
+    <p>
+      Each valid workflow maps to one MCP tool. The reviewed workflow supplies
+      the tool name and description, input schema, output schema, and policy
+      boundary. Invalid workflows are not exposed.
+    </p>
+
+    <pre>{
+  "workflow": "hn_search",
+  "manifest_digest": "sha256:...",
+  "outputs": { "results": "..." },
+  "trace_path": "traces/run_....json",
+  "duration_seconds": 1.24
 }</pre>
-      <h2 id="security">5. Security and privacy</h2>
-      <p>Page text, extracted values, tool descriptions, and tool outputs are untrusted data. Authorization comes from the validated workflow, caller identity, browser-profile policy, and runtime configuration, not from the model.</p>
-      <ul><li>Explicit domain allowlists.</li><li>Isolated or labelled browser profiles.</li><li>Redacted credentials, cookies, tokens, and sensitive fields.</li><li>Human approval for writes, payments, uploads, messages, and destructive actions.</li><li>Auditable refusals and policy decisions.</li></ul>
-      <h2 id="reliability">6. Reliability and interoperability</h2>
-      <p>Implementations should use stable selectors, bounded waits, assertions, failure categories, reproducible fixtures, and run metrics. When available, a first-party API or native WebMCP tool should be preferred over browser replay. WebMCP discovery and execution remain separate authorization decisions.</p>
-      <h2 id="conformance">7. Conformance</h2>
-      <p><strong>Level 0: Contract.</strong> Typed parsing, validation, policy, and manifest digest.</p><p><strong>Level 1: Replay.</strong> Read-only steps, assertions, traces, and provenance.</p><p><strong>Level 2: MCP.</strong> Validated workflows exposed as structured MCP tools.</p><p><strong>Level 3: Interoperability.</strong> Safe API, WebMCP, session, and bounded-recovery adapters.</p>
-      <h2 id="questions">8. Open questions</h2>
-      <p>Open design areas include workflow portability, selector standards, signed distribution, remote profile isolation, a common trace format, native WebMCP authorization, and long-running MCP task handles.</p>
-      <h2>Appendix: relationship to existing projects</h2>
-      <p>Playwright MCP exposes generic browser-control tools. WebMCP lets websites expose native tools to browser-integrated agents. This proposal defines the authoring, validation, replay, governance, and provenance layer for external MCP tools based on reviewed browser workflows.</p>
-      <h2>References</h2>
-      <ul><li><a href="https://webmachinelearning.github.io/webmcp/">WebMCP draft specification</a></li><li><a href="https://github.com/webmachinelearning/webmcp">WebMCP repository</a></li><li><a href="https://modelcontextprotocol.io/specification/latest">Model Context Protocol specification</a></li><li><a href="https://github.com/modelcontextprotocol/python-sdk">MCP Python SDK</a></li><li><a href="https://github.com/microsoft/playwright-mcp">Playwright MCP</a></li></ul>
-    </main>
-  </div>
-  <footer>Source and proposal history: <a href="https://github.com/browser-to-mcp/research">browser-to-mcp/research</a>.</footer>
+
+    <p>
+      The implemented transport is local STDIO. Remote transport,
+      authentication, and long-running task handling are separate deployment
+      concerns and must not weaken workflow policy.
+    </p>
+
+    <h2 id="security">5. Security and privacy</h2>
+
+    <p>
+      The workflow contract is a security boundary. Page text, extracted
+      values, tool descriptions, and tool outputs are untrusted data and cannot
+      change permissions, schemas, or step targets.
+    </p>
+
+    <ul>
+      <li>Use explicit domain allowlists.</li>
+      <li>Isolate browser contexts unless a labelled profile is selected.</li>
+      <li>Redact credentials, tokens, cookies, and marked sensitive values.</li>
+      <li>Require separate review for writes and other side effects.</li>
+      <li>Record refusals and policy decisions for diagnosis.</li>
+      <li>Derive authorization from validated policy and runtime context.</li>
+    </ul>
+
+    <h2 id="reliability">6. Reliability</h2>
+
+    <p>
+      Browser workflows are sensitive to page changes, timing, authentication,
+      localization, and anti-automation controls. Implementations should use
+      stable selectors, bounded waits and retries, assertions, structured
+      failure categories, controlled fixtures, and run metrics.
+    </p>
+
+    <p>
+      Provider-specific capabilities must be declared. A workflow should not
+      silently gain behavior when moved between browser providers.
+    </p>
+
+    <h2 id="evaluation">7. Evaluation and claims</h2>
+
+    <p>
+      Evaluation is split into four suites because each answers a different
+      question.
+    </p>
+
+    <table>
+      <thead>
+        <tr><th>Suite</th><th>Question</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Runtime parity</td><td>Do direct, workflow, and MCP paths preserve execution, and what overhead does each layer add?</td></tr>
+        <tr><td>Product value</td><td>Does the same frozen model perform recurring work better with generic Playwright MCP tools or a generated workflow tool?</td></tr>
+        <tr><td>Safety</td><td>Does useful work complete without violating declared policy?</td></tr>
+        <tr><td>Resilience</td><td>How does the runtime behave under controlled page, network, schema, and protocol faults?</td></tr>
+      </tbody>
+    </table>
+
+    <p>
+      The existing Direct, Workflow, and MCP paths all use Playwright. Their
+      comparison is an internal parity and overhead study, not a competitive
+      benchmark against Playwright or Playwright MCP.
+    </p>
+
+    <p>
+      A product comparison keeps the model, prompt, task state, validator,
+      budgets, browser, and network condition fixed. It reports Completion
+      Under Policy, turns, tokens, tool calls, browser actions, duration, cost,
+      invalid calls, violations, structured-result validity, provenance, and
+      diagnosis quality. Workflow preparation and maintenance cost must be
+      reported with recurring execution cost.
+    </p>
+
+    <p>
+      Claims must state the task set, run count, environment, date range,
+      model when used, and denominator. Results from a small task set cannot be
+      generalized to arbitrary websites.
+    </p>
+
+    <h2 id="conformance">8. Conformance</h2>
+
+    <p><strong>Level 0: Contract.</strong> Typed parsing, validation, policy, and manifest digest.</p>
+    <p><strong>Level 1: Replay.</strong> Read-only steps, assertions, traces, and provenance.</p>
+    <p><strong>Level 2: MCP.</strong> Validated workflows exposed as structured MCP tools.</p>
+    <p><strong>Level 3: Interoperability.</strong> Safe API, WebMCP, session, and bounded-recovery adapters.</p>
+
+    <p>
+      An implementation must state its level and unsupported actions. The
+      current reference implementation targets Level 2. Read-only native
+      WebMCP discovery is not, by itself, a Level 3 claim.
+    </p>
+
+    <h2 id="status">9. Current status</h2>
+
+    <p>
+      The reference implementation supports strict YAML contracts, local
+      read-only replay through Playwright, generated MCP tools over STDIO,
+      structured results, domain policy, assertions, redacted traces, failure
+      screenshots, and deterministic readiness fixtures. It also records
+      native WebMCP metadata without invoking discovered tools.
+    </p>
+
+    <p>
+      Native WebMCP execution, authenticated workflows, writes, existing-tab
+      attachment, hosted browsers, remote transport, and automatic recovery
+      are not implemented. Hacker News and Wikipedia search are current example
+      workflows, not evidence of broad website coverage.
+    </p>
+
+    <h3>Next evidence milestone</h3>
+    <p>
+      Run a paired study in which the same frozen model receives either generic
+      Playwright MCP tools or one generated workflow tool for the same
+      controlled task. Evaluate safety and operational resilience separately
+      before making product or marketing claims.
+    </p>
+
+    <h2 id="questions">10. Open questions</h2>
+    <ul>
+      <li>Workflow and locator portability between browser providers.</li>
+      <li>Remote workflow distribution and signing.</li>
+      <li>Profile isolation and authorization for authenticated execution.</li>
+      <li>A common trace and evaluation record.</li>
+      <li>Authorization and representation of native WebMCP execution.</li>
+      <li>Long-running MCP task handling.</li>
+      <li>Portable accounting for preparation and maintenance cost.</li>
+    </ul>
+
+    <h2 id="references">References</h2>
+    <ul>
+      <li><a href="https://modelcontextprotocol.io/specification/latest">Model Context Protocol specification</a></li>
+      <li><a href="https://github.com/modelcontextprotocol/python-sdk">MCP Python SDK</a></li>
+      <li><a href="https://github.com/microsoft/playwright-mcp">Playwright MCP</a></li>
+      <li><a href="https://webmachinelearning.github.io/webmcp/">WebMCP draft specification</a></li>
+      <li><a href="https://arxiv.org/abs/2412.05467">BrowserGym</a></li>
+      <li><a href="https://arxiv.org/abs/2307.13854">WebArena</a></li>
+      <li><a href="https://research.ibm.com/publications/st-webagentbench-a-benchmark-for-evaluating-safety-and-trustworthiness-in-web-agents">ST-WebAgentBench</a></li>
+      <li><a href="https://www.microsoft.com/en-us/research/publication/waber-evaluating-reliability-and-efficiency-of-web-agents-with-existing-benchmarks/">WABER</a></li>
+    </ul>
+  </main>
+
+  <footer>
+    <a href="index.bs">Detailed proposal source</a> |
+    <a href="https://github.com/browser-to-mcp/spec">Repository</a> |
+    <a href="https://github.com/browser-to-mcp/spec/issues">Issues</a>
+  </footer>
 </body>
 </html>

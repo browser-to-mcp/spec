@@ -1,69 +1,55 @@
 # Browser Workflow Tools for MCP
 
-Websites are full of useful actions that still have no API. This project
-explores a practical way to turn a reviewed browser workflow into a typed,
-traceable MCP tool.
+[Proposal](https://browser-to-mcp.github.io/spec/) |
+[Source](index.bs) |
+[Issues](https://github.com/browser-to-mcp/spec/issues)
 
-In simple terms:
+---
+
+This repository contains a draft contract and execution model for turning a
+reviewed browser workflow into a narrow, typed MCP tool.
 
 ```text
-reviewed workflow -> validation -> browser replay -> MCP tool
+workflow contract -> validation -> policy check -> replay -> typed result
 ```
 
-For example, a developer could expose `download_latest_invoice(customer_id)`
-instead of asking an agent to rediscover the same clicks every time.
+The proposal covers workflow schemas, deterministic replay, MCP mapping,
+permissions, assertions, redacted traces, provenance, and evaluation. It is an
+early community proposal, not an official W3C or MCP standard.
 
-This repository contains the proposal for that idea. It is written to be
-clear enough to implement, test, and challenge.
+### Repository contents
 
-- [Read the live proposal](https://browser-to-mcp.github.io/spec/)
-- [`index.bs`](index.bs) is the Bikeshed source.
-- [`index.html`](index.html) is the dependency-free publication preview.
-- [Research repository](https://github.com/browser-to-mcp/research)
+- [`index.bs`](index.bs) is the detailed standards-style source.
+- [`index.html`](index.html) is the dependency-free publication served by
+  GitHub Pages.
+- [The issue tracker](https://github.com/browser-to-mcp/spec/issues) is the
+  public place for design feedback and implementation evidence.
 
-## Where to start
+### Current scope
 
-Read the [proposal](https://browser-to-mcp.github.io/spec/) first. For the
-decisions behind it, see the [product specification](https://github.com/browser-to-mcp/research/blob/main/PRODUCT_SPEC.md)
-and [build plan](https://github.com/browser-to-mcp/research/blob/main/BUILD_PLAN.md).
+A reference implementation supports local, read-only workflow validation and
+replay, generated MCP tools over STDIO, structured results, policy enforcement,
+redacted traces, and read-only discovery of native WebMCP metadata. Native
+WebMCP execution, authenticated workflows, writes, hosted browsers, and remote
+transport remain outside the implemented scope.
 
-Feedback, implementation results, and small documentation improvements are
-welcome. Please open an issue in the [research repository](https://github.com/browser-to-mcp/research/issues)
-with a concrete example or proposed change.
+The current execution-parity benchmark verifies internal runtime paths that all
+share Playwright. It is not evidence that the project outperforms Playwright or
+Playwright MCP. Product claims require a separate same-model comparison between
+generic browser tools and generated workflow tools, together with safety and
+resilience evaluation.
 
-This is an early community proposal, not an official W3C or MCP standard.
+### Local preview
 
-## What it covers
+Open `index.html` directly, or serve this repository with any static file
+server.
 
-- Human-reviewable workflow contracts.
-- Typed MCP inputs and structured outputs.
-- Deterministic browser replay.
-- Domain and side-effect policies.
-- Assertions, redacted traces, and provenance.
-
-The first implementation target is local, read-only workflows.
-
-## What it is not
-
-This is not another generic browser-control server. Projects such as
-Playwright MCP expose low-level browser actions for an agent. This proposal
-defines the layer above that: a reviewed workflow becomes one reusable tool.
-
-It also does not replace a website's API or WebMCP support. A runtime should
-prefer those first and use browser replay when they are unavailable.
-
-## Local preview
-
-Open `index.html` directly or serve this repository with a static file server.
-
-## Bikeshed source
-
-When Bikeshed is available:
+To validate the standards-style source when Bikeshed is available:
 
 ```bash
-uvx bikeshed spec index.bs index.html
+uvx bikeshed spec index.bs /tmp/browser-workflow-tools.html
 ```
 
-## License
+### License
 
 Apache-2.0.
